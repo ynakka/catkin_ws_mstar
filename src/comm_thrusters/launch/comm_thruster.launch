@@ -1,0 +1,5 @@
+
+<launch>
+    <arg name="spacecraft_name" />
+    <node name="serial_comm_$(arg spacecraft_name)" type="protocol_publisher_node.py" pkg="comm_thrusters" args="$(arg spacecraft_name)"></node>
+</launch>

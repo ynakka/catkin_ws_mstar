@@ -1,0 +1,4 @@
+<launch>
+	<arg name="spacecraft_name">
+	<node pkg="imu" name="imu_$(arg spacecraft_name)" type="imu_publisher_node.py" args="/dev/tty.USB0 $(arg spacecraft_name)"></node>
+</launch>
