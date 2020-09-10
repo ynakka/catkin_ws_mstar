@@ -1,0 +1,7 @@
+<launch>
+    <!-- Spacecraft Name -->
+    <arg name="spacecraft_name"/> 
+    <!-- Guidance Node -->
+    <node name="guidance_node_$(arg spacecraft_name)" pkg="mstar_guidance" type="guidance_main.py" args="$(arg spacecraft_name)" output="screen"></node>
+    <!-- Bag Data -->
+</launch>
