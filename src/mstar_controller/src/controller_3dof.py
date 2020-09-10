@@ -65,6 +65,7 @@ def controller(position_error, velocity_error, theta_error, thetad_error,\
     control_force[0:2] = -gain_position['Kp']*position_error - gain_position['Kd']*velocity_error*position_control_frequency
     control_force[2] = -gain_attitude['Kp']*theta_error - gain_attitude['Kd']*thetad_error*attitude_control_frequency
 
+
     return control_force
 
 
@@ -97,6 +98,8 @@ def control_allocation(theta,control_force_inertial,system_param,\
         rotate_inertialframe_to_bodyframe = rotate_bodyframe_to_inertialframe(theta).T
         thruster_force = thruster_force_desired.reshape((8,1)) + (inv_force@rotate_inertialframe_to_bodyframe@inv_allocation) # thruster force 
 
+    # convex optimization based control allocation 
+
     # if cvx == True: 
     #     # feasible convex optimization based method for control allocation
 
@@ -105,6 +108,7 @@ def control_allocation(theta,control_force_inertial,system_param,\
     #     delta = cp.Variable(1)
     #     cost = cp.norm1(F) + beta* delta
     #     constraint = [cp.norm1()]
+    # print(thruster_force.reshape((8)))
     return thruster_force.reshape((8))
 
 def get_slope(x1, x2, y1, y2):
@@ -143,7 +147,7 @@ def impulse_bit_filter(thruster_force_times,max_impulse_bit, min_impulse_bit):
             if (thruster_force_times[i] < min_impulse_bit):
                 thrust_time_msec[i] = 0
             else:
-                thrust_time_msec[i] = s2ms(thruster_force_times)
+                thrust_time_msec[i] = s2ms(thruster_force_times[i])
 
 
     return thrust_time_msec
@@ -196,7 +200,7 @@ def thuster_model(manifold_pressure):
     else:
         a = 3.51
         b = -0.006035
-        thrust_max = 0.35
+        thrust_max = 0.4
     
     return a, b, thrust_max
 

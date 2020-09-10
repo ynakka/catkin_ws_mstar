@@ -14,7 +14,6 @@ import controller_3dof as cntrl
 import low_pass_filter as lpf
 
 class control_talker:
-
 	def __init__(self,system_param,thruster_param,control_param,filter_param,waypoint_error):
 
 		# system parameters
@@ -41,9 +40,9 @@ class control_talker:
 
 		# dummy variables 
 
-		self.min_impulse_bit = 0.02 #20milli sec
+		self.min_impulse_bit = 0.01 #20milli sec
 		self.max_control_frequency = max(self.position_control_frequency,self.attitude_control_frequency)
-		self.max_impulse_bit = 0.5/self.max_control_frequency
+		self.max_impulse_bit = 0.3/self.max_control_frequency
 
 		self.state_old_nav = np.zeros(6)
 		self.state_nav = np.zeros(6)
@@ -56,6 +55,7 @@ class control_talker:
 
 		# control msg 
 		self.thruster = Thrusters8()
+		self.thruster_times_ms = np.zeros(8)
 
 		# preliminary variables using methods 
 
@@ -65,11 +65,11 @@ class control_talker:
 		
 
 		# intialize the control node 
-		rospy.init_node('control_node',anonymous=True, log_level=rospy.DEBUG)
+		rospy.init_node('control_node')
 		spacecraft_name = sys.argv[1]
 		control_publisher_topic = spacecraft_name + '/thruster_msg'
 		# publishwe instance for the control forces in millisec PWM 
-		self.control_publisher = rospy.Publisher(control_publisher_topic, Thrusters8, queue_size=1)
+		self.control_publisher = rospy.Publisher(control_publisher_topic, Thrusters8)
 
 		# topic names 
 
@@ -79,8 +79,10 @@ class control_talker:
 		self.state_nav_topic = spacecraft_name + '/nav/state_msg'
 
 
-		rate = rospy.Rate(self.max_control_frequency)
+		rate_control = rospy.Rate(1)
 
+		time_step = 0
+		# bool_attitude= False
 		while not rospy.is_shutdown():
 			#-------------------------------------------------------------------------
 			##----subscribe to the guidance algorithm and update desired states-------
@@ -95,8 +97,26 @@ class control_talker:
 			##----compute and publish control in the callback function----------------------------
 			#-------------------------------------------------------------------------
 			self.state_nav_subscriber = rospy.Subscriber(self.state_nav_topic,State6,self.state_nav_call_back)
+			
+			self.update_thruster_times(self.thruster_times_ms)
+			# publish and wait
+			self.control_publisher.publish(self.thruster)
 
-			rate.sleep()
+			print('thruster_times_ms',self.thruster_times_ms)
+			
+			# set old state
+			self.state_old_nav = self.state_nav
+			self.state_old_guid = self.state_guid
+
+			time_step = time_step +1
+			# if time_step % 2 == 0:
+			# 	self.min_impulse_bit = 0.0 #20milli sec
+			# 	bool_attitude = True
+			# else:
+			# 	self.min_impulse_bit = 0.04 #20milli sec
+			# 	bool_attitude = False
+			print('time_step', time_step)
+			rate_control.sleep()
 
 
 	def state_nav_call_back(self,msg):
@@ -109,35 +129,29 @@ class control_talker:
 		self.state_nav[5] = msg.state_dtheta 
 
 		# compute error 
-		position_error, velocity_error, theta_error, thetad_error = cntrl.filtered_state_error(self.state_guid,self.state_nav,self.state_old_guid,self.state_old_nav,
+		self.position_error, self.velocity_error, self.theta_error, self.thetad_error = cntrl.filtered_state_error(self.state_guid,self.state_nav,self.state_old_guid,self.state_old_nav,
 																		self.alpha_position,self.alpha_attitude)
 		
 		# compute control force
-		control_force = cntrl.controller(position_error, velocity_error,theta_error,thetad_error,\
+		self.control_force = cntrl.controller(self.position_error, self.velocity_error,self.theta_error,self.thetad_error,\
 										self.gain_position,self.gain_attitude,self.position_control_frequency,\
 										self.attitude_control_frequency)
 
 		# compute thruster force using control allocation tehcnique
-		thruster_force = cntrl.control_allocation(self.state_nav[2],control_force,self.system_param)
+		self.thruster_force = cntrl.control_allocation(self.state_nav[2],self.control_force,self.system_param)
 		# saturation filter
-		thruster_force = cntrl.thruster_force_saturation(thruster_force,self.thrust_max)
+		self.thruster_force = cntrl.thruster_force_saturation(self.thruster_force,self.thrust_max)
 		# Note: saturation filter not required if using QP formulation
 
 		
 		# Project the forces to thrustes PWM width in millisec
-		thruster_times_sec = self.thruster_force_to_times(thruster_force)
-		thruster_times_ms = cntrl.impulse_bit_filter(thruster_times_sec,self.max_impulse_bit,self.min_impulse_bit)		
+		self.thruster_times_sec = self.thruster_force_to_times(self.thruster_force)
+		self.thruster_times_ms = cntrl.impulse_bit_filter(self.thruster_times_sec,self.max_impulse_bit,self.min_impulse_bit)		
 
-		if self.counter < 0:
-			thruster_times_ms = np.zeros(8)
-			self.counter = 1
-		self.update_thruster_times(thruster_times_ms)
-		# publish and wait
-		self.control_publisher.publish(self.thruster)
-		
-		# set old state
-		self.state_old_nav = self.state_nav
-		self.state_old_guid = self.state_guid
+		# if self.counter < 0:
+		# 	self.thruster_times_ms = np.zeros(8)
+		# 	self.counter = 1
+
 
 	
 
@@ -162,6 +176,14 @@ class control_talker:
 
 
 	def update_thruster_times(self,thruster_times_ms):
+		# self.thruster.FXmMZm = 0
+		# self.thruster.FXmMZp = 0
+		# self.thruster.FYmMZm = 0
+		# self.thruster.FYmMZp = 0
+		# self.thruster.FXpMZm = 0
+		# self.thruster.FXpMZp = 0
+		# self.thruster.FYpMZm = 0
+		# self.thruster.FYpMZp = 0
 		self.thruster.FXmMZm = thruster_times_ms[0]
 		self.thruster.FXmMZp = thruster_times_ms[1]
 		self.thruster.FYmMZm = thruster_times_ms[2]
