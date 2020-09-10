@@ -11,8 +11,8 @@ import time
 from navigation_talker import navigation_talker
 
 def main():
-    sampling_frequency = 20
-    obstacle_name = ['sc2','asteroid']
+    sampling_frequency =1 
+    obstacle_name = ['sc4']
     nav_talker = navigation_talker(sampling_frequency,obstacle_name)
 
 if __name__=="__main__":

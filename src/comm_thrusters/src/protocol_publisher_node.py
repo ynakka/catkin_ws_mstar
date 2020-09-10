@@ -65,7 +65,8 @@ if __name__ == '__main__':
     pub_thd = threading.Thread(target=serial_comm_publisher, args=[serial_port, prefix])
     pub_thd.start()
     rospy.Subscriber(prefix + "/thruster_msg", Thrusters8, handle_thrusters_setpt, callback_args=serial_port)
-
+    #rate_comm_thruster = rospy.Rate()    
     while not rospy.is_shutdown():
+        #rospy.Subscriber(prefix + "/thruster_msg",Thrusters8, handle_thrusters_setpt,callback_args=serial_port)
         rospy.spin()
 

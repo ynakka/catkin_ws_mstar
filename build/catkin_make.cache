@@ -1,0 +1,2 @@
+comm_thrusters:imu:mstar_controller:mstar_navigation
+-DCATKIN_DEVEL_PREFIX=/home/nvidia/catkin_ws_mstar/devel -DCMAKE_INSTALL_PREFIX=/home/nvidia/catkin_ws_mstar/install -G Unix Makefiles

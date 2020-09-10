@@ -4,7 +4,7 @@
     <node name="imu_$(arg spacecraft_name)" type="imu_publisher_node.py" pkg="imu" args="/dev/ttyUSB0 $(arg spacecraft_name)"></node>
     <node name="serial_comm_$(arg spacecraft_name)" type="protocol_publisher_node.py" pkg="comm_thrusters" args="$(arg spacecraft_name)"></node>
     <!-- Control Node -->
-    <node name="control_node_$(arg spacecraft_name)" pkg="mstar_controller" type="control_main.py" args="$(arg spacecraft_name)"></node>
+    <!--<node name="control_node_$(arg spacecraft_name)" pkg="mstar_controller" type="control_main.py" args="$(arg spacecraft_name)"></node> -->
     <!-- Navigation Node -->
-    <node name="navigation_node_$(arg spacecraft_name)" pkg="mstar_navigation" type="navigation_main.py" args="$(arg spacecraft_name)"></node>
+    <node name="navigation_node_$(arg spacecraft_name)" pkg="mstar_navigation" type="navigation_main.py" args="$(arg spacecraft_name)" output="screen"></node>
 </launch>

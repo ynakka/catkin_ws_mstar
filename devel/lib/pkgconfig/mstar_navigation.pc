@@ -1,0 +1,8 @@
+prefix=/home/nvidia/catkin_ws_mstar/devel
+
+Name: mstar_navigation
+Description: Description of mstar_navigation
+Version: 0.0.0
+Cflags: -I/home/nvidia/catkin_ws_mstar/devel/include
+Libs: -L/home/nvidia/catkin_ws_mstar/devel/lib 
+Requires: rospy std_msgs geometry_msgs message_runtime

@@ -44,12 +44,14 @@ class navigation_talker:
             self.obstacle_state_publisher_topic.append('obstacle/'+self.obstacle_name[i]+'/nav/state_msg')
         
         self.obstacle_state_publisher1 = rospy.Publisher(self.obstacle_state_publisher_topic[0], State6, queue_size=1)
-        self.obstacle_state_publisher2 = rospy.Publisher(self.obstacle_state_publisher_topic[1], State6, queue_size=1)
+        # self.obstacle_state_publisher2 = rospy.Publisher(self.obstacle_state_publisher_topic[1], State6, queue_size=1)
+
 
         # obstacle 
         # self.obstacle_state_pub
 
-        rate = rospy.Rate(self.sampling_frequency)
+        rate_nav = rospy.Rate(self.sampling_frequency)
+        counter = 0
         while not rospy.is_shutdown():
            
             # robot state
@@ -62,17 +64,21 @@ class navigation_talker:
             state[5] = self.state_imu[5]
 
             self.update_nav_state(state)
+            counter +=1
+            print('counter',counter)
+            print('state',state)
             self.state_publisher.publish(self.state_nav)
             self.state_vicon_old = self.state_vicon
 
             # obstacle position
             rospy.Subscriber("vicon/" + self.obstacle_name[0] + "/" + self.obstacle_name[0], TransformStamped, self.get_position_data_call_back)
+            #print(self.obstacle_state)
             self.obstacle_state_publisher1.publish(self.obstacle_state_nav)
        
-            rospy.Subscriber("vicon/" + self.obstacle_name[1] + "/" + self.obstacle_name[1], TransformStamped, self.get_position_data_call_back)
-            self.obstacle_state_publisher2.publish(self.obstacle_state_nav)
+            #rospy.Subscriber("vicon/" + self.obstacle_name[1] + "/" + self.obstacle_name[1], TransformStamped, self.get_position_data_call_back)
+            #self.obstacle_state_publisher2.publish(self.obstacle_state_nav)
        
-            rate.sleep()
+            rate_nav.sleep()
 
 
     def get_vicon_data_call_back(self,msg):
@@ -87,7 +93,7 @@ class navigation_talker:
         
         t1 = 2.0*(q_w*q_z + q_x*q_y)
         t2 = 1.0 - 2.0*(q_y*q_y + q_z*q_z)
-        self.state_vicon[2] = math.degrees(math.atan2(t1, t2))
+        self.state_vicon[2] = math.atan2(t1, t2)
 
 
     def get_imu_data_call_back(self,msg):
