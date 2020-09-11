@@ -1,7 +1,7 @@
 """
 RRT for ROS implementation
 Author: Ellie Cho
-Editor: Yashwanth Nakka
+Maintainer: Yashwanth Nakka
 """
 
 import copy
@@ -19,11 +19,9 @@ show_animation = True
 show_graph = False
 max_speed = 5
 class RRT:
-    
     """
     Class for RRT planning
     """
-
     def __init__(self, start, goal, obstacle_list, rand_area, rand_angle, vrange,
                  expand_dis=3.0, path_resolution=0.5, goal_sample_rate=5, max_iter=500):
         """

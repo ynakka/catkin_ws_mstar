@@ -2,7 +2,7 @@
 
 """
 Author: Ellie Cho
-Editor: Yashwanth Nakka
+Maintainer: Yashwanth Nakka
 """
 import numpy as np
 

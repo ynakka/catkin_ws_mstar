@@ -1,10 +1,7 @@
 """
-
 RRT* for simulations
-
 Author: Ellie Cho
 Editor: Yashwanth Nakka
-
 """
 
 
