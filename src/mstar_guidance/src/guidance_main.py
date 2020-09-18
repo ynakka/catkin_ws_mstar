@@ -21,10 +21,7 @@ def main():
                     'control_limits' : {'u_max':0.45,'u_min':0.0},
                     'nominal_trajectory': [False]}
 
-    # supply with nominal trajectory from RRT for fast convergence
-    #               
-    # 
-    #   
+
     talker = guidance_talker(control_param,trajopt_param)
 
 if __name__ == "__main__":

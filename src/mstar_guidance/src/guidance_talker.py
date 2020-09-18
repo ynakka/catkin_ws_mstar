@@ -12,6 +12,8 @@ from mstar_guidance.msg import State6 as State6
 
 import trajopt.trajopt as scp 
 
+import rrt_mstar.rrt_ao_mstar as rrt_ao
+
 class guidance_talker:
     def __init__(self,control_param,trajopt_param):
 
@@ -67,6 +69,18 @@ class guidance_talker:
         # rospy.Subscriber(state_nav_subscriber_topic, State6,self.get_initial_state)
 
         # compute nominal trajectory using RRT 
+        self.state_max = np.array([-5,-5,-math.pi,-0.5,-0.5,-10])
+        self.state_min = np.array([5,5,math.pi,0.5,0.5,10])
+        # state_min = np.array([0,0,-mt.pi,-1,-1,-10])
+        # state_max = np.array([1,1,mt.pi,1,1,10])
+
+        x_ao_rrt, u_ao_rrt =  rrt_ao.rrt_ao_mstar(self.init_state,self.term_state,self.max_control_frequency,\
+            self.obstacle_state,self.state_min,self.state_max,self.control_limits['u_min'],self.control_limits['u_max'],\
+                mass = 10,inertia = 1.62,moment_arm = 0.2)
+
+        # save rrt path file
+        np.save('x_ao_rrt.npy',x_ao_rrt)
+        np.save('u_ao_rrt.npy',u_ao_rrt)
 
         # desired_state, desired_control = scp.traj_opt(self.time_param,self.system_param,self.init_state,\
         #                                 self.term_state,self.control_cost,self.control_limits,self.obstacle_state,\
@@ -124,7 +138,7 @@ class guidance_talker:
         self.obstacle_state_dummy[3]= msg.state_dx
         self.obstacle_state_dummy[4]= msg.state_dy
         self.obstacle_state_dummy[5]= msg.state_dtheta
-        self.obstacle_state.append(self.obstacle_state_dummy)
+        self.obstacle_state.append([self.obstacle_state_dummy,0.6])
 
     
     def get_initial_state(self,msg):
