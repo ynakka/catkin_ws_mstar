@@ -31,7 +31,8 @@ class guidance_talker:
         ## Setup for planning 
 
         self.system_param = {'num_states': 6,'num_control':8}
-        self.time_param = {'time_init' : 0.0,'time_fin' : 50,'time_steps' : 100}
+        # self.time_param = {'time_init' : 0.0,'time_fin' : 50,'time_steps' : 100}
+        self.time_param = {'dt':0.5,'time_steps':0}
         self.nominal_trajectory = trajopt_param['nominal_trajectory']
         self.scp_param = trajopt_param['scp_param']
         self.control_cost = trajopt_param['control_cost']
@@ -69,12 +70,12 @@ class guidance_talker:
         # rospy.Subscriber(state_nav_subscriber_topic, State6,self.get_initial_state)
 
         # compute nominal trajectory using RRT 
-        self.state_max = np.array([-5,-5,-math.pi,-0.5,-0.5,-10])
-        self.state_min = np.array([5,5,math.pi,0.5,0.5,10])
+        self.state_max = np.array([-5,-5,-np.pi,-0.5,-0.5,-10])
+        self.state_min = np.array([5,5,np.pi,0.5,0.5,10])
         # state_min = np.array([0,0,-mt.pi,-1,-1,-10])
         # state_max = np.array([1,1,mt.pi,1,1,10])
 
-        x_ao_rrt, u_ao_rrt =  rrt_ao.rrt_ao_mstar(self.init_state,self.term_state,self.max_control_frequency,\
+        x_ao_rrt, u_ao_rrt =  rrt_ao.rrt_ao_mstar(self.init_state,self.term_state,self.time_param['dt'],\
             self.obstacle_state,self.state_min,self.state_max,self.control_limits['u_min'],self.control_limits['u_max'],\
                 mass = 10,inertia = 1.62,moment_arm = 0.2)
 
@@ -82,14 +83,22 @@ class guidance_talker:
         np.save('x_ao_rrt.npy',x_ao_rrt)
         np.save('u_ao_rrt.npy',u_ao_rrt)
 
-        # desired_state, desired_control = scp.traj_opt(self.time_param,self.system_param,self.init_state,\
-        #                                 self.term_state,self.control_cost,self.control_limits,self.obstacle_state,\
-        #                                 self.nominal_trajectory,self.scp_param)
+
+        # update time steps based on rrt output
+        self.time_param['time_steps'] = int(x_ao_rrt.shape[0])
+        
+        # construct nominal trajectory 
+        self.nominal_trajectory.append(x_ao_rrt)
+        self.nominal_trajectory.append(u_ao_rrt)
+        
+        desired_state, desired_control = scp.traj_opt(self.time_param,self.system_param,self.init_state,\
+                                        self.term_state,self.control_cost,self.control_limits,self.obstacle_state,\
+                                        self.nominal_trajectory,self.scp_param)
 
 
         rate = rospy.Rate(self.max_control_frequency)
         counter = 0
-        counter_max = 100 #desired_state.shape[0]  
+        counter_max =self.time_param['time_steps'] #desired_state.shape[0]  
         # counter_max = end_trajectory # total time steps 
         # plan = False
         while not rospy.is_shutdown():
@@ -107,10 +116,10 @@ class guidance_talker:
                 ss = np.zeros(6)
                 th = np.zeros(8)
             else:
-                ss = np.zeros(6)
-                th = np.zeros(8)
-                # ss = desired_state[int(counter)]
-                # th = desired_control[int(counter)]
+            #     ss = np.zeros(6)
+            #     th = np.zeros(8)
+                ss = desired_state[int(counter)]
+                th = desired_control[int(counter)]
 
             # Update state and Publish the desired state            
             self.update_state(ss)
@@ -120,7 +129,6 @@ class guidance_talker:
             print('guidance control',th)
             print('guidance state',ss)
 
-            
             self.state_guid_publisher.publish(self.state_guid)
             self.control_guid_publisher.publish(self.thruster_guid)
 
@@ -138,7 +146,7 @@ class guidance_talker:
         self.obstacle_state_dummy[3]= msg.state_dx
         self.obstacle_state_dummy[4]= msg.state_dy
         self.obstacle_state_dummy[5]= msg.state_dtheta
-        self.obstacle_state.append([self.obstacle_state_dummy,0.6])
+        self.obstacle_state.append([self.obstacle_state_dummy,0.8])
 
     
     def get_initial_state(self,msg):
