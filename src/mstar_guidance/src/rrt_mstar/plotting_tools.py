@@ -40,3 +40,4 @@ def circular_obstacle(x, y, radius, ax, facecolor='none', **kwargs):
     add_circle = Circle((center_x,center_y),radius,facecolor=facecolor, **kwargs) 
     return ax.add_patch(add_circle)
 
+    

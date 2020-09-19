@@ -201,8 +201,8 @@ if __name__ == "__main__":
     state_goal = np.array([1,1,0,0,0,0])
 
     dt = 0.5
-    state_min = np.array([0,0,-mt.pi,-1,-1,-10])
-    state_max = np.array([1,1,mt.pi,1,1,10])
+    state_min = np.array([0,0,-mt.pi/2,-0.5,-0.5,-20])
+    state_max = np.array([1,1,mt.pi/2,0.5,0.5,20])
 
     Umin = 0
     Umax = 0.45
@@ -228,10 +228,10 @@ if __name__ == "__main__":
     # print(len(solu))
 
     # print(np.shape(np.array(solx)))
-
     # print(np.shape(np.array(solu)))
 
-    # print(solx)
+    print(solx)
+    print(solu)
     # print(np.array(solx))
 
 
