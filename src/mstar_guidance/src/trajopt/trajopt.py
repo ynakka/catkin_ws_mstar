@@ -11,11 +11,18 @@ np.set_printoptions(threshold=sys.maxsize)
 
 # dependencies 
 import cvxpy as cp 
+import mstar_autograd as mstar_autograd
+
+# Autograd is slightly slower
+# A_mat = mstar_autograd.partialFx(mstar_autograd.mstar_dyn)
+# B_mat = mstar_autograd.partialFu(mstar_autograd.mstar_dyn)
+
 
 cwd = os.getcwd()
 # load linearized system matrices 
 # /home/yashwanth/Desktop/catkin_ws_mstar_guidance/src/mstar_guidance/src/trajopt
 
+# lambdified matrices
 Al = open('/home/yashwanth/Desktop/catkin_ws_mstar_guidance/src/mstar_guidance/src/trajopt/Amstar_det', 'rb')
 As = load(Al)
 Al.close()
@@ -32,7 +39,6 @@ Cl.close()
 # @jit
 def sys_A(X,U):
     return As(X,U).round(5)
-
 
 # @jit
 def sys_B(X,U):
@@ -51,29 +57,32 @@ def collision_constraint_2d(radius,obstacle_state,Xprev,num_states):
 
     mean_position = (np.mat(G)*np.mat(mean)).reshape((num_states)) 
     collision_dist = obstacle_state.reshape((num_states)) - mean_position
-    
+
     a = collision_dist.reshape((num_states,1))
     b =  np.mat(-a.reshape((1,num_states)))*np.mat(obstacle_state.reshape((num_states,1))) + radius*np.linalg.norm(collision_dist,2)
     return np.array(a,dtype=float), np.array(b,dtype=float) 
 
 
 def traj_opt(time_param,system_param,initial_state,terminial_state,control_cost,\
-    control_limits,obstacle_information,nominal_trajectory,scp_param):
+    control_limits,obstacle_list,nominal_trajectory,scp_param):
     
     ## time parameters 
     if os.path.isdir('data_det') == False:
         os.mkdir('data_det')
 
-    t_init = time_param['time_init'] #time_param[0] # 0 # sec
-    t_final = time_param['time_fin'] #5 # sec
-    T = int(time_param['time_steps']) # total steps  
-    tsteps = np.linspace(t_init,t_final,T) # time vector
-    dt = tsteps[1]-tsteps[0] # time step
+    # t_init = time_param['time_init'] #time_param[0] # 0 # sec
+    # t_final = time_param['time_fin'] #5 # sec
+    # T = int(time_param['time_steps']) # total steps  
+    # tsteps = np.linspace(t_init,t_final,T) # time vector
+    # dt = tsteps[1]-tsteps[0] # time step
+    dt = time_param['dt']
+    T = int(time_param['time_steps'])
 
     # sytem parameters related to stochastic dynamics
     
     num_states = int(system_param['num_states']) 
     num_control = int(system_param['num_control'])
+    num_obstacles = int(len(obstacle_list))
 
     Xinit = initial_state
     Xfin = terminial_state
@@ -89,9 +98,9 @@ def traj_opt(time_param,system_param,initial_state,terminial_state,control_cost,
  
     # Obstacle Information 
     # state and size loaded as a list in obstacle_information
-    num_obstacles = len(obstacle_information)
-    obstacle_radius = 0.7
-    obstacle_state = obstacle_information
+    # num_obstacles = len(obstacle_information)
+    # obstacle_radius = 0.7
+    # obstacle_state = obstacle_information
         
     # assign if a nominal trajectory is provided
     Xprev = np.linspace(Xinit,Xfin,int(T))
@@ -134,7 +143,7 @@ def traj_opt(time_param,system_param,initial_state,terminial_state,control_cost,
             # TBD: check obstacles in range 
             for jj in range(num_obstacles):
                 # obstacle linearization
-                a1, b1 = collision_constraint_2d(obstacle_radius,obstacle_state[jj],Xprev[t,:], num_states)
+                a1, b1 = collision_constraint_2d(obstacle_list[jj][1],obstacle_list[jj][0],Xprev[t,:], num_states)
                 a.append(a1)
                 b.append(b1)
             # collision constraint
@@ -266,3 +275,7 @@ def traj_opt(time_param,system_param,initial_state,terminial_state,control_cost,
 
 if __name__ == "__main__":
     pass
+    # x = np.array([1,1,0.1,0,0,0])
+    # u = np.ones(8)*0.01
+    # print(sys_B(x,u))
+    # print(B_mat(x,u))
