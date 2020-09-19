@@ -12,6 +12,16 @@ from cloudpickle import dump, load
 from gPC_toolbox.numerical_integration import integrate_gauss
 
 
+def obstacle_variance_gpc_assignment(obstacle_var,num_states,num_uncert,num_gpcstates):
+    
+    obstacle_gpc = np.zeros((num_gpcstates))
+
+    for i in range(num_uncert-num_states): # num_uncertainty
+        for j in range(num_states): # num_states
+            obstacle_gpc[i*(num_uncert-num_states+1)+j+1] = obstacle_var[i][j] 
+
+    return obstacle_gpc
+
 def linear_chance_constraint_matrices_noinit(n_states,n_uncert,p):
     
     xi_symbols = [symbols('xi'+str(i)) for i in range(1,n_uncert-n_states+1)]
@@ -34,9 +44,7 @@ def linear_chance_constraint_matrices_noinit(n_states,n_uncert,p):
     for xi_i in xi:
         HH_dummy = integrate_gauss(weight,node,HH_dummy, xi_i)
     #
-
     EHH = sqrtm(np.array(HH_dummy,float))
-
     H = zeros(l,l)
 
     for i in range(1,l):
@@ -53,16 +61,14 @@ def linear_chance_constraint_noinit(a,M,N,risk,num_gpcpoly,n_states,n_uncert,p):
     Converts to SOCP
     """
     a_hat = np.kron(a.T,M)
-
     a_dummy = np.zeros((n_states,n_states))
     
     for ii in range(n_states):
         a_dummy[ii,ii] = a[ii,0]
     #print(a_dummy)
     U = np.kron(a_dummy,np.identity(num_gpcpoly))
-
     # Sigma_det = U*N*N.T*U.T
-    Sigma_det = np.sqrt((1-risk)/risk)* N.T*U.T
+    Sigma_det = np.sqrt((1-risk)/risk)*N.T*U.T
 
     return np.reshape(np.round(np.array(a_hat,dtype=float),5),num_gpcpoly*n_states), np.round(np.array(Sigma_det,dtype=float),5)
 
